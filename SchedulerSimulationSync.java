@@ -36,7 +36,7 @@ class SharedResources {
     public static long totalWaitingTime = 0;       // Shared accumulator - NEEDS PROTECTION!
     public static List<String> executionLog = new ArrayList<>();  // Shared list - NEEDS PROTECTION!
     
-    // TODO #1: Add a ReentrantLock here to protect critical sections
+    // TODO #1: Add a ReentrantLock(s) here to protect critical sections
     // Example: public static final ReentrantLock lock = new ReentrantLock();
     
     // TODO #2: Add a Semaphore to limit concurrent process execution

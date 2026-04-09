@@ -70,6 +70,32 @@ Document your development process with **minimum 3 entries** showing progression
 
 ---
 
+### Entry 4 - [Date, Time]
+**What I implemented**: 
+
+**Challenges encountered**: 
+
+**How I solved it**: 
+
+**Testing approach**: 
+
+**Time spent**: 
+
+---
+
+### Entry 5 - [Date, Time]
+**What I implemented**: 
+
+**Challenges encountered**: 
+
+**How I solved it**: 
+
+**Testing approach**: 
+
+**Time spent**: 
+
+---
+
 ## Part 2: Technical Questions (1 mark)
 
 ### Question 1: Race Conditions
@@ -99,6 +125,19 @@ Document your development process with **minimum 3 entries** showing progression
 **Your Answer**:
 
 [Your answer here - reference try-finally blocks, lock ordering, etc.]
+
+---
+
+### Question 4: Lock Granularity Design Decision 
+**Q**: For Task 1 (protecting the three counters), explain your lock design choice:
+- Did you use ONE lock for all three counters (coarse-grained) OR separate locks for each counter (fine-grained)?
+- Explain WHY you made this choice
+- What are the trade-offs between the two approaches?
+- Given that the three counters are independent, which approach provides better concurrency and why?
+
+**Your Answer**:
+
+[Your answer here - explain coarse-grained vs fine-grained locking, independence of counters, concurrency implications. Show understanding of when to use each approach. 5-8 sentences expected.]
 
 ---
 

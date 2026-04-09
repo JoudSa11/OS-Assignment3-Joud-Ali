@@ -8,7 +8,7 @@
 This assignment builds upon **Assignment 1** by introducing **process synchronization** concepts. You will identify and fix **race conditions** in a multithreaded CPU scheduler by implementing **mutex locks** and **semaphores**. This assignment focuses on understanding and applying synchronization mechanisms to protect shared resources in concurrent environments.
 
 **What You Will Do:**
-- Use the **same codebase** from Assignment 1 (already copied for you)
+- Use the **same codebase** from Assignment 1 (already copied for you and renamed to `SchedulerSimulationSync.java`)
 - Identify race conditions in shared resources (counters, lists, data structures)
 - Implement **ReentrantLock** (mutex locks) to protect critical sections
 - Implement **Semaphores** to control concurrent access to resources
@@ -19,7 +19,7 @@ This assignment builds upon **Assignment 1** by introducing **process synchroniz
 
 **Key Requirements:**
 - **Video:** 3-5 minutes, uploaded to **personal Gmail** Google Drive (not university email)
-- **Commits:** Minimum 4 meaningful commits spread over multiple days
+- **Commits:** Minimum 4 meaningful commits spread over time (not all at once). Each commit should have a clear message describing the change and should be recorded in the development log in your documentation.
 - **Documentation:** Single comprehensive ASSIGNMENT_DOCUMENTATION.md file (worth 2 marks)
 - **Repository:** Must be PUBLIC on GitHub with university email account
 
@@ -196,7 +196,7 @@ Follow these steps to create your own copy of the assignment:
 
 1. **Open** `SchedulerSimulationSync.java` in VS Code
 
-2. **Find line ~278** (use Ctrl+G or Cmd+G to go to line):
+2. **Find line where `studentID` is declared:**
    ```java
    // BEFORE:
    int studentID = 123456789;  // CHANGE THIS TO YOUR STUDENT ID!
@@ -224,7 +224,7 @@ Follow these steps to create your own copy of the assignment:
    - The file moves to "Staged Changes"
 
 3. **Write commit message:**
-   - In the text box at the top, type: `Set my student ID: 441234567`
+   - In the text box at the top, type for example: `Set my student ID: YOUR_STUDENT_ID`
    - Press **Ctrl+Enter** (Windows/Linux) or **Cmd+Enter** (Mac) to commit
    - Or click the **✓ Commit** button
 
@@ -237,7 +237,7 @@ Follow these steps to create your own copy of the assignment:
 
 ```bash
 git add SchedulerSimulationSync.java
-git commit -m "Set my student ID: 441234567"
+git commit -m "Set my student ID: YOUR_STUDENT_ID"
 git push origin main
 ```
 
@@ -303,15 +303,79 @@ This assignment consists of four main tasks. Complete them in order and commit r
 **Commit (Using VS Code):**
 1. Open Source Control panel (Ctrl+Shift+G)
 2. Stage `SchedulerSimulationSync.java` (click + button)
-3. Message: `Task 1: Added ReentrantLock for counter protection`
+3. Message: `Task 1 (YOUR STUDENT ID): Added ReentrantLock for counter protection`
 4. Commit (Ctrl+Enter) and Push (Sync Changes)
 
 **Or using Terminal:**
 ```bash
 git add SchedulerSimulationSync.java
-git commit -m "Task 1: Added ReentrantLock for counter protection"
+git commit -m "Task 1 (YOUR STUDENT ID): Added ReentrantLock for counter protection"
 git push
 ```
+
+#### 🎯 Important Design Decision: Lock Granularity
+
+**You have TWO design choices for Task 1:**
+
+**Option A: Coarse-Grained Locking (Single Lock for All Counters)**
+```java
+public static final ReentrantLock counterLock = new ReentrantLock();
+
+// All three methods share ONE lock
+public static void incrementContextSwitch() {
+    counterLock.lock();
+    try {
+        contextSwitchCount++;
+    } finally {
+        counterLock.unlock();
+    }
+}
+// Same lock used for incrementCompletedProcess() and addWaitingTime()
+```
+
+**Pros:** Simple, easier to manage  
+**Cons:** ⚠️ **Unnecessary contention** - If Thread A is incrementing `contextSwitchCount`, Thread B must wait even though it only wants to increment `completedProcessCount`. The counters are independent, so this creates artificial bottleneck!
+
+---
+
+**Option B: Fine-Grained Locking (Separate Lock per Counter)** 
+```java
+public static final ReentrantLock contextSwitchLock = new ReentrantLock();
+public static final ReentrantLock completedProcessLock = new ReentrantLock();
+public static final ReentrantLock waitingTimeLock = new ReentrantLock();
+
+// Each method uses its OWN lock
+public static void incrementContextSwitch() {
+    contextSwitchLock.lock();
+    try {
+        contextSwitchCount++;
+    } finally {
+        contextSwitchLock.unlock();
+    }
+}
+// Different locks for incrementCompletedProcess() and addWaitingTime()
+```
+
+**Pros:** 
+
+✅ **Higher concurrency** - Multiple threads can update different counters simultaneously  
+✅ **Better performance** - Less waiting, more parallelism  
+✅ **Industry best practice** - Fine-grained locking when resources are independent  
+✅ **Demonstrates deeper understanding** of synchronization concepts
+
+**Cons:** Slightly more code to write (but worth it!)
+
+---
+
+**Which should you choose?**
+
+Since the three counters (`contextSwitchCount`, `completedProcessCount`, `totalWaitingTime`) are **independent** - updating one does NOT depend on values of the others - **fine-grained locking (Option B) is the better design**!
+
+**Think about it:** If ThreadA is tracking context switches and ThreadB is tracking completed processes, why should one wait for the other? They're updating completely different variables!
+
+**⚠️ NOTE:** In your video demonstration and `ASSIGNMENT_DOCUMENTATION.md`, you must **explain which approach you chose and WHY**. This shows understanding of lock granularity - a critical concurrency concept!
+
+---
 
 ### Task 2: Implement Mutex Lock for Execution Log (1 mark)
 
@@ -339,13 +403,13 @@ git push
 3. **Testing:** Run your program multiple times. The log count should be consistent and no `ConcurrentModificationException` should occur.
 
 **Commit (Using VS Code):**
-1. Source Control panel → Stage changes → Message: `Task 2: Added ReentrantLock for execution log`
+1. Source Control panel → Stage changes → Message: `Task 2 (YOUR STUDENT ID): Added ReentrantLock for execution log`
 2. Commit and Push
 
 **Or using Terminal:**
 ```bash
 git add SchedulerSimulationSync.java
-git commit -m "Task 2: Added ReentrantLock for execution log"
+git commit -m "Task 2 (YOUR STUDENT ID): Added ReentrantLock for execution log"
 git push
 ```
 
@@ -388,13 +452,13 @@ git push
 5. **Experiment:** Try changing `Semaphore(1)` to `Semaphore(2)` - observe the difference!
 
 **Commit (Using VS Code):**
-1. Source Control → Stage → Message: `Task 3: Implemented semaphore for CPU control`
+1. Source Control → Stage → Message: `Task 3 (YOUR STUDENT ID): Implemented semaphore for CPU control`
 2. Commit and Push
 
 **Or using Terminal:**
 ```bash
 git add SchedulerSimulationSync.java
-git commit -m "Task 3: Implemented semaphore for CPU control"
+git commit -m "Task 3 (YOUR STUDENT ID): Implemented semaphore for CPU control"
 git push
 ```
 
@@ -404,7 +468,7 @@ git push
 
 This file includes 6 comprehensive parts:
 
-**📹 IMPORTANT:** Add your video demonstration link in the **highlighted section at the top** of this file!
+**📹 IMPORTANT:** Add your video demonstration link in the **highlighted section at the top** of this file! _Remember to share the video using a personal gmail account (not your University account) and set sharing to "Anyone with the link". Test the link in incognito mode to ensure accessibility._
 
 1. **Part 1: Development Log** - Minimum 3 entries showing progression
 2. **Part 2: Technical Questions** - 3 questions about synchronization
@@ -415,13 +479,13 @@ This file includes 6 comprehensive parts:
 
 **Commit documentation (Using VS Code):**
 1. Source Control → Stage `ASSIGNMENT_DOCUMENTATION.md`
-2. Message: `Task 4: Completed comprehensive documentation`
+2. Message: `Task 4 (YOUR STUDENT ID): Completed comprehensive documentation`
 3. Commit and Push
 
 **Or using Terminal:**
 ```bash
 git add ASSIGNMENT_DOCUMENTATION.md
-git commit -m "Task 4: Completed comprehensive documentation"
+git commit -m "Task 4 (YOUR STUDENT ID): Completed comprehensive documentation"
 git push
 ```
 
@@ -441,6 +505,9 @@ Create a **video (maximum 5 minutes)** showing:
 2. **Code Walkthrough - Synchronization Mechanisms (90 sec):**
    - Open `SchedulerSimulationSync.java` in your IDE
    - Show where you added ReentrantLock declarations
+   - **REQUIRED:** Explain your lock granularity choice for Task 1:
+     - Did you use one lock for all counters OR separate locks per counter?
+     - WHY did you choose that approach? (concurrency vs simplicity)
    - Explain ONE critical section you protected (e.g., `incrementContextSwitch()`)
    - Show where you added Semaphore
    - Explain how the semaphore controls CPU access
@@ -464,7 +531,7 @@ Create a **video (maximum 5 minutes)** showing:
   - Reason: University Google Workspace may have restrictions or expire after graduation
 - **Quality:** Clear screen recording + audio narration
 - **File naming:** `StudentID_Assignment3_Synchronization.mp4`
-- **Add link:** Put Google Drive link in your README.md
+- **Add link:** Put Google Drive link in your `ASSIGNMENT_DOCUMENTATION.md` in the highlighted section at the top
 - **Test access:** Open link in incognito/private window to verify anyone can view
 
 **Recording Tools:**
@@ -522,30 +589,32 @@ Create a **video (maximum 5 minutes)** showing:
 - **More than 2 days late:** Assignment not accepted (0 marks)
 
 ### Video Issues:
-- **Missing video:** -2 marks
+- **Missing video:** -3 marks
 - **Video not accessible (private/restricted link):** -2 marks
-- **Video exceeds 5 minutes:** -0.5 marks
+- **Video exceeds 5 minutes:** -1 mark
 - **Video less than 3 minutes (insufficient content):** -1 mark
-- **No audio explanation:** -1 mark
-- **Does not show commit history:** -0.5 marks
-- **No explanation of synchronization concepts:** -0.5 marks
+- **No audio explanation:** -2 marks
+- **Does not show commit history:** -1 mark
+- **No explanation of all added features:** -3 marks
+- **No run demonstration:** -2 marks
 
 ### Repository Issues:
-- **Private repository (not public):** -0.5 marks
-- **Repository not accessible:** Cannot grade (0 marks until fixed)
-- **Not using university email for GitHub account:** -0.25 marks
-- **Repository name not descriptive:** -0.25 marks
+- **GitHub not used:** -4 marks
+- **Private repository (not public):** -3 marks
+- **Not using university email for GitHub account:** -2 marks
+- **Commit with other user:** -2 marks
+- **Not commit:** -3 marks
 
 ### Code Quality Issues:
 - **Code does not compile:** -2 marks
-- **Code does not run:** -1.5 marks
-- **Student ID not set or incorrect:** -0.5 marks
+- **Code does not run:** -3 marks
+- **Student ID not set or incorrect:** -1 mark
 - **Missing try-finally blocks:** -0.5 marks per missing block (serious safety issue!)
 - **Race conditions still present (not fixed):** -1 mark per unfixed race condition
 
 ### Commit and Documentation Issues:
-- **Single commit or bulk commits (all at once):** -0.5 marks
-- **Less than 4 commits:** -0.25 marks per missing commit
+- **Single commit or bulk commits (all at once):** -3 marks
+- **Less than 4 commits:** -1 mark per missing commit
 - **Commits made after deadline (inspected via git history):** Late penalty applies
 - **Empty or meaningless commit messages:** -0.25 marks
 - **ASSIGNMENT_DOCUMENTATION.md incomplete:** Proportional deduction from Task 4 marks
@@ -558,7 +627,6 @@ Create a **video (maximum 5 minutes)** showing:
 
 ### Important Notes:
 - Penalties are cumulative (multiple violations = multiple deductions)
-- Maximum total deduction cannot exceed 5 marks (floor is 0)
 - In case of legitimate technical issues, contact instructor **BEFORE** deadline
 - Video accessibility will be tested - ensure "Anyone with the link" can view
 
@@ -660,15 +728,6 @@ Run at least 5 times - should NEVER see:
 - `ConcurrentModificationException`
 - Deadlocks (program hangs)
 - Negative counters
-
----
-
-## 📚 Additional Resources
-
-- **Java ReentrantLock:** https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/locks/ReentrantLock.html
-- **Java Semaphore:** https://docs.oracle.com/javase/8/docs/api/java/util/concurrent/Semaphore.html
-- **Operating Systems Concepts (Silberschatz):** Chapter 6 - Synchronization
-- **Java Concurrency in Practice** (recommended reading)
 
 ---
 
