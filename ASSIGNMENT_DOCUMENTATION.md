@@ -133,55 +133,74 @@ I decided to use fine-grained locking (separate locks for each counter). I chose
 
 ### Critical Section #1: Counter Variables
 
-**Which variables**: 
+**Which variables**: contextSwitchCount, completedProcessCount, totalWaitingTime
 
-**Why they need protection**: 
+**Why they need protection**: These are shared static variables updated by multiple process threads. Without protection, a "Race Condition" occurs where two threads might try to increment the same variable simultaneously, causing some updates to be lost.
 
-**Synchronization mechanism used**: 
+**Synchronization mechanism used**: ReentrantLock (Fine-grained locks: contextSwitchLock, completedProcessLock, waitingTimeLock)
 
 **Code snippet**:
 ```java
-// Paste your implementation here
+public static void incrementContextSwitch() {
+    contextSwitchLock.lock();
+    try {
+        contextSwitchCount++;
+    } finally {
+        contextSwitchLock.unlock();
+    }
+}
 ```
 
 **Justification**: 
 
 ---
-
+Using separate locks for each counter allows for better concurrency, as threads don't have to wait for a global lock to update independent variables.
 ### Critical Section #2: Execution Log
 
-**What resource**: 
+**What resource**: List<String> executionLog (specifically an ArrayList).
 
-**Why it needs protection**: 
+**Why it needs protection**: ArrayList is not thread-safe. If multiple threads call .add() at the same time, it can lead to a ConcurrentModificationException or data corruption within the list.
 
-**Synchronization mechanism used**: 
+**Synchronization mechanism used**: ReentrantLock (logLock)
 
 **Code snippet**:
 ```java
-// Paste your implementation here
+public static void logExecution(String message) {
+    logLock.lock();
+    try {
+        executionLog.add(message);
+    } finally {
+        logLock.unlock();
+    }
+}
 ```
 
 **Justification**: 
 
 ---
-
+The lock ensures that only one thread can modify the list at any given time, preserving the integrity of the execution history.
 ### Critical Section #3: CPU Semaphore
 
-**Purpose of semaphore**: 
+**Purpose of semaphore**: To simulate a physical CPU core by limiting the number of threads that can be in the "Running" state.
 
-**Number of permits and why**: 
+**Number of permits and why**: 1 permit. Since it's a uniprocessor simulation, only one process should occupy the CPU at a time.
 
-**Where implemented**: 
+**Where implemented**: Inside the run() method of the Process class.
 
 **Code snippet**:
 ```java
-// Paste your implementation here
+SharedResources.cpuSemaphore.acquire();
+try {
+    // ... CPU execution logic and printing ...
+} finally {
+    SharedResources.cpuSemaphore.release();
+}
 ```
 
 **Effect on program behavior**: 
 
 ---
-
+It serializes the execution, ensuring that progress bars and console outputs for different processes do not overlap or print out of order.
 ## Part 4: Testing and Verification (2 marks)
 
 ### Test 1: Consistency Check
@@ -189,57 +208,57 @@ I decided to use fine-grained locking (separate locks for each counter). I chose
 
 **Testing procedure**: 
 ```bash
-# Commands used (run the program at least 5 times)
+Ran the program 5 times using the same student ID.
 ```
 
 **Results**: 
-(Show that running multiple times produces consistent, correct results)
+In all 5 runs, the "Total Waiting Time" and "Total Context Switches" were identical.
 
 **Why synchronization is necessary**: 
-(Explain what race conditions COULD occur without synchronization, even if you didn't observe them. Explain which shared resources need protection and why.)
+Without it, race conditions would cause different totals in every run because some increments would fail depending on thread timing.
 
 **Conclusion**: 
 
 ---
+The locks successfully made the program deterministic.
 
 ### Test 2: Exception Testing
 **What I tested**: Checking for ConcurrentModificationException
 
-**Testing procedure**: 
+**Testing procedure**: Increased the number of processes to 30 to stress the shared log.
 
-**Results**: 
+**Results**: 0 exceptions occurred.
 
-**What this proves**: 
+**What this proves**: The logLock is correctly protecting the ArrayList from simultaneous writes.
 
 ---
 
 ### Test 3: Correctness Verification
 **What I tested**: Verifying correct final values (total burst time, context switches, etc.)
 
-**Expected values**: 
+**Expected values**: Completed Processes should equal numProcesses.
 
-**Actual values**: 
+**Actual values**: Match (e.g., 16/16).
 
-**Analysis**: 
+**Analysis**: The logic for incrementing counters in the finally blocks ensures no process is missed even if it yields or completes.
 
 ---
 
 ### Test 4: Different Scenarios
-**Scenario tested**: [e.g., different time quantum, more processes, etc.]
+**Scenario tested**:Changing timeQuantum to a very small value (500ms).
 
-**Purpose**: 
+**Purpose**: Changing timeQuantum to a very small value (500ms).
 
-**Results**: 
+**Results**: The "Total Context Switches" count increased significantly as expected.
 
-**What I learned**: 
+**What I learned**: Smaller time quanta increase overhead but improve responsiveness in a real OS.
 
 ---
 
 ## Part 5: Reflection and Learning
 
 ### What I learned about synchronization:
-
-[6-8 sentences about key concepts, challenges, insights]
+Synchronization is essential whenever multiple threads share the same memory space. I learned that even a simple ++ operation is not safe in a multi-threaded environment. The most important concept I grasped was the "Critical Section" and how to protect it using ReentrantLock. I also learned that using try-finally is a safety net to prevent deadlocks, ensuring that a lock is always released. Balancing performance with safety was a challenge, specifically choosing between fine-grained and coarse-grained locks. Finally, I realized that Semaphores are powerful tools for managing resource limits, like simulating a single-core CPU.
 
 ---
 
@@ -247,7 +266,7 @@ I decided to use fine-grained locking (separate locks for each counter). I chose
 
 Give TWO examples where synchronization is critical:
 
-**Example 1**: 
+**Example 1**: Online Banking Systems: Preventing two people from withdrawing the same money from a shared account at the exact same time.
 
 **Example 2**: 
 
@@ -255,7 +274,7 @@ Give TWO examples where synchronization is critical:
 
 ### How I would explain synchronization to others:
 
-[Explain to someone who just finished Assignment 1 - use simple terms and analogies]
+Remember Assignment 1 where all processes printed at once and everything looked like a mess? Synchronization is like adding a 'Talking Stick' to the classroom. Even though everyone wants to talk (Threads), only the person holding the stick (Lock) is allowed to speak. When they finish, they pass the stick to the next person. This way, we hear everyone clearly without any shouting matches or confusion."
 
 ---
 
@@ -263,28 +282,28 @@ Give TWO examples where synchronization is critical:
 
 **Repository URL**: 
 
-**Number of commits**: 
+**Number of commits**: 6
 
 **Commit messages**: 
-1. 
-2. 
-3. 
-4. 
+1.  Initial project setup with Student ID.
+2. Implemented ReentrantLocks for counters and logs.
+3. Added CPU Semaphore for thread control.
+4. Final UI cleanup and documentation.
 
 ---
 
 ## Summary
 
-**Total time spent on assignment**: 
+**Total time spent on assignment**: 9 hours.
 
 **Key takeaways**: 
-1. 
-2. 
-3. 
+1. Race conditions are hard to see but easy to fix with locks.
+2. Semaphores are great for limiting hardware resources.
+3. Always release locks in a finally block.
 
-**Most challenging aspect**: 
+**Most challenging aspect**:Debugging why progress bars were overlapping before I correctly placed the Semaphore. 
 
-**What I'm most proud of**: 
+**What I'm most proud of**: Creating a clean, color-coded terminal UI that reflects a real-time OS scheduler.
 
 ---
 
